@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os
+import sys
 import shutil
 import string
 from importlib import import_module
 from pathlib import Path
+from scrapy.cmdline import execute 
 from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlparse
 
@@ -120,7 +122,11 @@ class Command(ScrapyCommand):
         if template_file:
             self._genspider(module, name, url, opts.template, template_file)
             if opts.edit:
-                self.exitcode = os.system(f'scrapy edit "{name}"')  # noqa: S605
+                cwd = os.getcwd()
+                if cwd not in sys.path:
+                    sys.path.append(cwd)
+                    
+                execute(argv=['scrapy', 'edit', name])
 
     def _generate_template_variables(
         self,
