@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import os
-import sys
 import shutil
 import string
 from importlib import import_module
 from pathlib import Path
-from scrapy.cmdline import execute 
 from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlparse
 
@@ -120,13 +118,13 @@ class Command(ScrapyCommand):
 
         template_file = self._find_template(opts.template)
         if template_file:
-            self._genspider(module, name, url, opts.template, template_file)
+            # Capture the absolute path of the created file
+            spider_file = self._genspider(module, name, url, opts.template, template_file)
             if opts.edit:
-                cwd = os.getcwd()
-                if cwd not in sys.path:
-                    sys.path.append(cwd)
-                    
-                execute(argv=['scrapy', 'edit', name])
+                # Get the editor from settings (falls back to EDITOR env var)
+                editor = self.settings.get("EDITOR", "nano")
+                # Open the editor DIRECTLY on the file path
+                os.system(f'{editor} "{spider_file}"')
 
     def _generate_template_variables(
         self,
@@ -174,6 +172,7 @@ class Command(ScrapyCommand):
         )
         if spiders_module:
             print(f"in module:\n  {spiders_module.__name__}.{module}")
+        return spider_file
 
     def _find_template(self, template: str) -> Path | None:
         template_file = Path(self.templates_dir, f"{template}.tmpl")
